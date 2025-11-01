@@ -1,7 +1,9 @@
 #![allow(non_snake_case)]
+#![allow(hidden_glob_reexports)]
 
-use std::ffi::CStr;
-use std::fmt::{Debug, Display, Error, Formatter};
+use std::fmt::Display;
+use std::ffi::{c_void, CStr};
+use std::fmt::{Debug, Error, Formatter};
 
 #[macro_use]
 extern crate lazy_static;
@@ -26,22 +28,25 @@ pub struct VkBaseInStructure {
     pub pNext: *const VkBaseInStructure,
 }
 
-#[cfg(target_family = "windows")]
 pub type HANDLE = usize;
-#[cfg(target_family = "windows")]
 pub type HINSTANCE = usize;
-#[cfg(target_family = "windows")]
 pub type HWND = usize;
-#[cfg(target_family = "windows")]
 pub type LPCWSTR = *const u16;
-#[cfg(target_family = "windows")]
 pub type DWORD = u32;
-#[cfg(target_family = "windows")]
 #[allow(non_camel_case_types)]
 pub type SECURITY_ATTRIBUTES = c_void; // TODO
 
+#[repr(u32)]
+pub enum VkVersion {
+    V1_0 = 0x00400000,
+    V1_1 = 0x00401000,
+    V1_2 = 0x00402000,
+    V1_3 = 0x00403000,
+    V1_4 = 0x00404000,
+}
+
 macro_rules! handle {
-    ($name:ident, $type:ty$(,$type_enum_variant:path)?) => {
+    ($name:ident, $type:ident$(,$type_enum_variant:path)?) => {
         #[repr(C)]
         #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
         pub struct $name($type);
@@ -54,11 +59,15 @@ macro_rules! handle {
             pub fn none() -> Self {
                 $name(<$type>::none())
             }
+            
+            pub fn handle(&self) -> $type {
+                self.0
+            }
         }
 
         impl Default for $name {
             fn default() -> Self {
-                $name::none()
+                $name(<$type>::none())
             }
         }
 
@@ -73,6 +82,21 @@ macro_rules! handle {
                 handle.0.into()
             }
         }
+        
+        impl From<u64> for $name {
+            fn from(handle: u64) -> Self {
+                $name($type(handle))
+            }
+        }
+        
+        impl Handle for $name {
+            fn addr(&self) -> u64 {
+                self.0.addr()
+            }
+        }
+
+        unsafe impl Send for $name {}
+        unsafe impl Sync for $name {}
     };
 }
 
@@ -161,7 +185,7 @@ macro_rules! bitmasks {
             bitflags! {
                 $(#[$flags_attr])*
                 #[repr(transparent)]
-                #[derive(Default)]
+                #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
                 pub struct $flag_bits_name: VkFlags {
                     $(
                         $(#[$inner $($args)*])*
@@ -191,7 +215,7 @@ macro_rules! bitmasks64 {
             bitflags! {
                 $(#[$flags_attr])*
                 #[repr(transparent)]
-                #[derive(Default)]
+                #[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
                 pub struct $flag_bits_name: VkFlags64 {
                     $(
                         $(#[$inner $($args)*])*
@@ -210,46 +234,55 @@ macro_rules! instance_level_functions {
             $(#[$function_attr:meta])*
             fn $function_name:ident($($parameter_name:ident:$parameter_type:ty),*)$(->$return_type:ty)?;
         )*
-    )=>{
-        #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
-        pub struct InstanceLevelFunctions {
+    ) => {
+        paste::paste! {
             $(
                 $(#[$function_attr])*
-                pub $function_name: extern "C" fn($($parameter_name:$parameter_type),*)$(->$return_type)?,
+                static mut [<$function_name _PFN>]: extern "C" fn($($parameter_name:$parameter_type),*)$(->$return_type)? = {
+                    extern "C" fn uninitialized_function($(_:$parameter_type),*)$(->$return_type)? {
+                        panic!("Vulkan function {} called before initialization!", stringify!($function_name));
+                    }
+                    uninitialized_function
+                };
             )*
         }
-        impl InstanceLevelFunctions {
-            pub fn load_from_instance(instance: crate::core::VkInstance)->InstanceLevelFunctions {
+
+        static INSTANCE_FUNCTIONS_INIT: Once = Once::new();
+
+        pub fn load_instance_functions(instance: crate::core::VkInstance) {
+            INSTANCE_FUNCTIONS_INIT.call_once(|| {
                 use std::ffi::CStr;
                 use std::mem::transmute;
                 use crate::get_instance_proc_addr;
-                unsafe {
-                    let functions = InstanceLevelFunctions {
+
+                paste::paste! {
+                    unsafe {
                         $(
-                            $(#[$function_attr])*
-                            $function_name: match get_instance_proc_addr(
-                                instance,
-                                CStr::from_bytes_with_nul_unchecked(concat!(stringify!($function_name), '\0').as_bytes()))
-                            {
-                                Ok(proc_addr) => transmute(proc_addr),
-                                Err(_) => {
-                                    extern "C" fn $function_name($(_:$parameter_type),*)$(->$return_type)?{
-                                        unimplemented!()
-                                    }
-                                    $function_name
-                                },
+                        [<$function_name _PFN>] = match get_instance_proc_addr(
+                            instance,
+                            CStr::from_bytes_with_nul_unchecked(concat!(stringify!($function_name), '\0').as_bytes()))
+                        {
+                            Ok(proc_addr) => transmute(proc_addr),
+                            Err(_) => {
+                                extern "C" fn fallback_function($(_:$parameter_type),*)$(->$return_type)? {
+                                    panic!("Vulkan function {} not available", stringify!($function_name));
+                                }
+                                fallback_function
                             },
+                        };
                         )*
-                    };
-                    functions
+                    }
                 }
-            }
+            });
+        }
+
+        paste::paste! {
             $(
-                $(#[$function_attr])*
-                #[inline(always)]
-                pub unsafe fn $function_name(&self, $($parameter_name:$parameter_type),*)$(->$return_type)?{
-                    (self.$function_name)($($parameter_name),*)
-                }
+            $(#[$function_attr])*
+            #[inline(always)]
+            pub unsafe fn $function_name($($parameter_name:$parameter_type),*)$(->$return_type)? {
+                ([<$function_name _PFN>])($($parameter_name),*)
+            }
             )*
         }
     }
@@ -261,83 +294,74 @@ macro_rules! device_level_functions {
             $(#[$function_attr:meta])*
             fn $function_name:ident($($parameter_name:ident:$parameter_type:ty),*)$(->$return_type:ty)?;
         )*
-    )=>{
-        #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
-        pub struct DeviceLevelFunctions {
+    ) => {
+        paste::paste! {
             $(
                 $(#[$function_attr])*
-                pub $function_name: extern "C" fn($($parameter_name:$parameter_type),*)$(->$return_type)?,
+                static mut [<$function_name _PFN>]: extern "C" fn($($parameter_name:$parameter_type),*)$(->$return_type)? = {
+                    extern "C" fn uninitialized_function($(_:$parameter_type),*)$(->$return_type)? {
+                        panic!("Vulkan function {} called before initialization!", stringify!($function_name));
+                    }
+                    uninitialized_function
+                };
             )*
         }
-        impl DeviceLevelFunctions {
-            pub fn load_from_instance(instance: crate::core::VkInstance)->DeviceLevelFunctions {
-                use std::ffi::CStr;
-                use std::mem::transmute;
-                use crate::get_instance_proc_addr;
-                unsafe {
-                    let functions = DeviceLevelFunctions {
-                        $(
-                            $(#[$function_attr])*
-                            $function_name: match get_instance_proc_addr(
-                                instance,
-                                CStr::from_bytes_with_nul_unchecked(concat!(stringify!($function_name), '\0').as_bytes()))
-                            {
-                                Ok(proc_addr) => transmute(proc_addr),
-                                Err(_) => {
-                                    extern "C" fn $function_name($(_:$parameter_type),*)$(->$return_type)?{
-                                        unimplemented!()
-                                    }
-                                    $function_name
-                                },
-                            },
-                        )*
-                    };
-                    functions
-                }
-            }
-            pub fn load_from_device(core_functions: &crate::core::InstanceLevelFunctions, device: crate::core::VkDevice)->DeviceLevelFunctions {
+
+        static DEVICE_FUNCTIONS_INIT: Once = Once::new();
+
+        pub fn load_device_functions(device: crate::core::VkDevice) {
+            DEVICE_FUNCTIONS_INIT.call_once(|| {
                 use std::ffi::CStr;
                 use std::mem::transmute;
                 use crate::get_device_proc_addr;
-                unsafe {
-                    let functions = DeviceLevelFunctions {
+
+                paste::paste! {
+                    unsafe {
                         $(
-                            $(#[$function_attr])*
-                            $function_name: match get_device_proc_addr(
-                                core_functions,
+                        $(#[$function_attr])*
+                        {
+                            [<$function_name _PFN>] = match get_device_proc_addr(
                                 device,
                                 CStr::from_bytes_with_nul_unchecked(concat!(stringify!($function_name), '\0').as_bytes()))
                             {
                                 Ok(proc_addr) => transmute(proc_addr),
                                 Err(_) => {
-                                    extern "C" fn $function_name($(_:$parameter_type),*)$(->$return_type)?{
-                                        unimplemented!()
+                                    extern "C" fn fallback_function($(_:$parameter_type),*)$(->$return_type)? {
+                                        panic!("Vulkan function {} not available", stringify!($function_name));
                                     }
-                                    $function_name
+                                    fallback_function
                                 },
-                            },
+                            };
+                        }
                         )*
-                    };
-                    functions
+                    }
                 }
-            }
+            });
+        }
+
+        paste::paste! {
             $(
-                $(#[$function_attr])*
-                #[inline(always)]
-                pub unsafe fn $function_name(&self, $($parameter_name:$parameter_type),*)$(->$return_type)?{
-                    (self.$function_name)($($parameter_name),*)
-                }
+            $(#[$function_attr])*
+            #[inline(always)]
+            pub unsafe fn $function_name($($parameter_name:$parameter_type),*)$(->$return_type)? {
+                ([<$function_name _PFN>])($($parameter_name),*)
+            }
             )*
         }
     }
 }
 
+
 #[repr(transparent)]
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
-pub struct DispatchableHandle(usize);
+pub struct DispatchableHandle(u64);
 impl DispatchableHandle {
     pub fn none() -> Self {
         DispatchableHandle(0)
+    }
+    
+    pub fn addr(&self) -> u64 {
+        self.0
     }
 }
 impl Display for DispatchableHandle {
@@ -347,7 +371,7 @@ impl Display for DispatchableHandle {
 }
 impl From<DispatchableHandle> for u64 {
     fn from(handle: DispatchableHandle) -> Self {
-        handle.0 as u64
+        handle.0
     }
 }
 
@@ -357,6 +381,10 @@ pub struct NonDispatchableHandle(u64);
 impl NonDispatchableHandle {
     pub fn none() -> Self {
         NonDispatchableHandle(0)
+    }
+    
+    pub fn addr(&self) -> u64 {
+        self.0
     }
 }
 impl Display for NonDispatchableHandle {
@@ -368,6 +396,10 @@ impl From<NonDispatchableHandle> for u64 {
     fn from(handle: NonDispatchableHandle) -> Self {
         handle.0
     }
+}
+
+pub trait Handle {
+    fn addr(&self) -> u64;
 }
 
 pub const VK_MAX_PHYSICAL_DEVICE_NAME_SIZE: usize = 256;
@@ -436,7 +468,7 @@ pub const VK_MAX_DRIVER_NAME_SIZE: usize = 256;
 pub const VK_MAX_DRIVER_INFO_SIZE: usize = 256;
 
 #[derive(Debug)]
-pub struct LoadingError(String);
+pub struct LoadingError();
 
 fn get_instance_proc_addr(
     instance: VkInstance,
@@ -444,29 +476,22 @@ fn get_instance_proc_addr(
 ) -> Result<PFN_vkVoidFunction, LoadingError> {
     let function_pointer = vkGetInstanceProcAddr(instance, name.as_ptr());
     match function_pointer as usize {
-        0 => Err(LoadingError(format!(
-            "Load function \"{}\"  failed!",
-            name.to_str().unwrap()
-        ))),
+        0 => Err(LoadingError()),
         _ => Ok(function_pointer),
     }
 }
 fn get_device_proc_addr(
-    core_functions: &InstanceLevelFunctions,
     device: VkDevice,
     name: &CStr,
 ) -> Result<PFN_vkVoidFunction, LoadingError> {
-    let function_pointer = unsafe { core_functions.vkGetDeviceProcAddr(device, name.as_ptr()) };
+    let function_pointer = unsafe { vkGetDeviceProcAddr(device, name.as_ptr()) };
     match function_pointer as usize {
-        0 => Err(LoadingError(format!(
-            "Load function '{}'  failed!",
-            name.to_str().unwrap()
-        ))),
+        0 => Err(LoadingError()),
         _ => Ok(function_pointer),
     }
 }
 
-#[derive(Default, Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Default, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[repr(transparent)]
 pub struct ApiVersion(u32);
 
@@ -513,12 +538,15 @@ impl Display for ApiVersion {
     }
 }
 
-use std::os::raw::c_void;
+impl Debug for ApiVersion {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}.{}.{}", self.major(), self.minor(), self.patch())
+    }
+}
+
 mod core;
 mod ext;
 mod khr;
-#[cfg(feature = "VulkanMemoryAllocator")]
-mod vma;
 
 pub use crate::core::*;
 
@@ -552,6 +580,10 @@ pub use crate::khr::swapchain::*;
 #[cfg(feature = "VK_KHR_win32_surface")]
 pub use crate::khr::win32_surface::*;
 
+pub use crate::khr::linux_surface::*;
+
+pub use crate::khr::android_surface::*;
+
 #[cfg(feature = "VK_KHR_acceleration_structure")]
 pub use crate::khr::acceleration_structure::*;
 
@@ -561,5 +593,3 @@ pub use crate::khr::ray_tracing_pipeline::*;
 #[cfg(feature = "VK_KHR_ray_query")]
 pub use crate::khr::ray_query::*;
 
-#[cfg(feature = "VulkanMemoryAllocator")]
-pub use vma::*;

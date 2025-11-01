@@ -4,7 +4,7 @@
 
 use std::os::raw::c_void;
 use std::ptr;
-
+use std::ptr::null;
 use crate::*;
 
 enums! {
@@ -19,6 +19,26 @@ enums! {
         ANY_HIT_KHR = 2,
         INTERSECTION_KHR = 3,
     },
+}
+
+#[repr(C)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+pub struct VkPipelineLibraryCreateInfoKHR {
+    pub sType: VkStructureType,
+    pub pNext: *const c_void,
+    pub library_count: u32,
+    pub pLibraries: *const VkPipeline,
+}
+
+impl Default for VkPipelineLibraryCreateInfoKHR {
+    fn default() -> Self {
+        Self {
+            sType: VkStructureType::PIPELINE_LIBRARY_CREATE_INFO_KHR,
+            pNext: Default::default(),
+            library_count: 0,
+            pLibraries: null(),
+        }
+    }
 }
 
 #[repr(C)]

@@ -5,6 +5,7 @@
 use std::mem::transmute;
 use std::os::raw::{c_char, c_void};
 use std::ptr;
+use std::sync::Once;
 
 use crate::*;
 
@@ -835,6 +836,10 @@ enums! {
 
         #[cfg(feature = "VK_KHR_win32_surface")]
         WIN32_SURFACE_CREATE_INFO_KHR = 1000009000,
+        XCB_SURFACE_CREATE_INFO_KHR = 1000005000,
+        XLIB_SURFACE_CREATE_INFO_KHR = 1000004000,
+        WAYLAND_SURFACE_CREATE_INFO_KHR = 1000006000,
+        ANDROID_SURFACE_CREATE_INFO_KHR = 1000008000,
 
         #[cfg(feature = "VK_KHR_pipeline_library")]
         PIPELINE_LIBRARY_CREATE_INFO_KHR = 1000290000,
@@ -3288,7 +3293,7 @@ impl Default for VkPipelineDynamicStateCreateInfo {
 }
 
 #[repr(C)]
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+#[derive(Clone, Copy, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
 pub struct VkStencilOpState {
     pub failOp: VkStencilOp,
     pub passOp: VkStencilOp,
@@ -4738,7 +4743,7 @@ impl Default for VkMemoryAllocateFlagsInfo {
 }
 
 #[repr(C)]
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Copy)]
 pub struct VkBindBufferMemoryInfo {
     pub sType: VkStructureType,
     pub pNext: *const c_void,
@@ -4778,7 +4783,7 @@ impl Default for VkBindBufferMemoryDeviceGroupInfo {
 }
 
 #[repr(C)]
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Copy)]
 pub struct VkBindImageMemoryInfo {
     pub sType: VkStructureType,
     pub pNext: *const c_void,
@@ -8344,9 +8349,9 @@ impl Default for VkWriteDescriptorSetInlineUniformBlock {
 }
 
 #[cfg(target_family = "windows")]
-static LIBRARY_NAME: &'static str = "vulkan-1";
+static LIBRARY_NAME: &'static str = "vulkan-1.dll";
 #[cfg(target_family = "unix")]
-static LIBRARY_NAME: &'static str = "vulkan";
+static LIBRARY_NAME: &'static str = "libvulkan.so";
 
 unsafe extern "C" fn enumerate_instance_version_for_vulkan10(pApiVersion: *mut u32) {
     *pApiVersion = ApiVersion::new(1, 0, 0).into();
@@ -8418,21 +8423,21 @@ instance_level_functions! {
     #[cfg(feature = "VK_EXT_debug_utils")]
     fn vkSetDebugUtilsObjectTagEXT(device: VkDevice, pTagInfo: *const VkDebugUtilsObjectTagInfoEXT)->VkResult;
     #[cfg(feature = "VK_EXT_debug_utils")]
-    fn vkQueueBeginDebugUtilsLabelEXT(queue: core::VkQueue, pLabelInfo: *const VkDebugUtilsLabelEXT);
+    fn vkQueueBeginDebugUtilsLabelEXT(queue: VkQueue, pLabelInfo: *const VkDebugUtilsLabelEXT);
     #[cfg(feature = "VK_EXT_debug_utils")]
-    fn vkQueueEndDebugUtilsLabelEXT(queue: core::VkQueue);
+    fn vkQueueEndDebugUtilsLabelEXT(queue: VkQueue);
     #[cfg(feature = "VK_EXT_debug_utils")]
-    fn vkQueueInsertDebugUtilsLabelEXT(queue: core::VkQueue, pLabelInfo: *const VkDebugUtilsLabelEXT);
+    fn vkQueueInsertDebugUtilsLabelEXT(queue: VkQueue, pLabelInfo: *const VkDebugUtilsLabelEXT);
     #[cfg(feature = "VK_EXT_debug_utils")]
-    fn vkCmdBeginDebugUtilsLabelEXT(commandBuffer: core::VkCommandBuffer, pLabelInfo: *const VkDebugUtilsLabelEXT);
+    fn vkCmdBeginDebugUtilsLabelEXT(commandBuffer: VkCommandBuffer, pLabelInfo: *const VkDebugUtilsLabelEXT);
     #[cfg(feature = "VK_EXT_debug_utils")]
-    fn vkCmdEndDebugUtilsLabelEXT(commandBuffer: core::VkCommandBuffer);
+    fn vkCmdEndDebugUtilsLabelEXT(commandBuffer: VkCommandBuffer);
     #[cfg(feature = "VK_EXT_debug_utils")]
-    fn vkCmdInsertDebugUtilsLabelEXT(commandBuffer: core::VkCommandBuffer, pLabelInfo: *const VkDebugUtilsLabelEXT);
+    fn vkCmdInsertDebugUtilsLabelEXT(commandBuffer: VkCommandBuffer, pLabelInfo: *const VkDebugUtilsLabelEXT);
     #[cfg(feature = "VK_EXT_debug_utils")]
     fn vkCreateDebugUtilsMessengerEXT(instance: VkInstance, pCreateInfo: *const VkDebugUtilsMessengerCreateInfoEXT, pAllocator: *const core::VkAllocationCallbacks, pMessenger: *mut VkDebugUtilsMessengerEXT)->VkResult;
     #[cfg(feature = "VK_EXT_debug_utils")]
-    fn vkDestroyDebugUtilsMessengerEXT(instance: VkInstance, messenger: VkDebugUtilsMessengerEXT, pAllocator: *const core::VkAllocationCallbacks);
+    fn vkDestroyDebugUtilsMessengerEXT(instance: VkInstance, messenger: VkDebugUtilsMessengerEXT, pAllocator: *const VkAllocationCallbacks);
     #[cfg(feature = "VK_EXT_debug_utils")]
     fn vkSubmitDebugUtilsMessageEXT(instance: VkInstance, messageSeverity: VkDebugUtilsMessageSeverityFlagBitsEXT, messageTypes: VkDebugUtilsMessageTypeFlagsEXT, pCallbackData: *const VkDebugUtilsMessengerCallbackDataEXT);
 
@@ -8452,6 +8457,11 @@ instance_level_functions! {
 
     #[cfg(feature = "VK_KHR_win32_surface")]
     fn vkCreateWin32SurfaceKHR(instance: VkInstance, pCreateInfo: *const VkWin32SurfaceCreateInfoKHR, pAllocator: *const VkAllocationCallbacks, pSurface: *mut VkSurfaceKHR)->VkResult;
+    fn vkCreateXlibSurfaceKHR(instance: VkInstance, pCreateInfo: *const VkXlibSurfaceCreateInfoKHR, pAllocator: *const VkAllocationCallbacks, pSurface: *mut VkSurfaceKHR) -> VkResult;
+    fn vkCreateXcbSurfaceKHR(instance: VkInstance, pCreateInfo: *const VkXcbSurfaceCreateInfoKHR, pAllocator: *const VkAllocationCallbacks, pSurface: *mut VkSurfaceKHR) -> VkResult;
+    fn vkCreateWaylandSurfaceKHR(instance: VkInstance, pCreateInfo: *const VkWaylandSurfaceCreateInfoKHR, pAllocator: *const VkAllocationCallbacks, pSurface: *mut VkSurfaceKHR) -> VkResult;
+    fn vkCreateAndroidSurfaceKHR(instance: VkInstance, pCreateInfo: *const VkAndroidSurfaceCreateInfoKHR, pAllocator: *const VkAllocationCallbacks, pSurface: *mut VkSurfaceKHR) -> VkResult;
+    
     #[cfg(feature = "VK_KHR_win32_surface")]
     fn vkGetPhysicalDeviceWin32PresentationSupportKHR(physicalDevice: VkPhysicalDevice, queueFamilyIndex: u32)->VkBool32;
 }

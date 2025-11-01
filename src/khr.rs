@@ -18,7 +18,8 @@ pub mod swapchain;
 
 #[cfg(feature = "VK_KHR_win32_surface")]
 pub mod win32_surface;
-
+pub mod linux_surface;
+pub mod android_surface;
 #[cfg(feature = "VK_KHR_acceleration_structure")]
 pub mod acceleration_structure;
 

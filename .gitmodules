@@ -1,6 +1,0 @@
-[submodule "Vulkan-Headers"]
-	path = Vulkan-Headers
-	url = https://github.com/KhronosGroup/Vulkan-Headers
-[submodule "VulkanMemoryAllocator"]
-	path = VulkanMemoryAllocator
-	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git

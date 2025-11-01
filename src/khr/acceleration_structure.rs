@@ -375,17 +375,13 @@ impl VkAccelerationStructureInstanceKHR {
 
     pub fn get_flags(&self) -> VkGeometryInstanceFlagsKHR {
         if cfg!(target_endian = "little") {
-            unsafe {
-                VkGeometryInstanceFlagsKHR::from_bits_unchecked(
-                    self.instanceShaderBindingTableRecordOffset_flags >> 24,
-                )
-            }
+            VkGeometryInstanceFlagsKHR::from_bits(
+                self.instanceShaderBindingTableRecordOffset_flags >> 24,
+            ).expect("Failed to convert VkGeometryInstanceFlagsKHR")
         } else {
-            unsafe {
-                VkGeometryInstanceFlagsKHR::from_bits_unchecked(
-                    0x000000FFu32 & self.instanceShaderBindingTableRecordOffset_flags,
-                )
-            }
+            VkGeometryInstanceFlagsKHR::from_bits(
+                0x000000FFu32 & self.instanceShaderBindingTableRecordOffset_flags,
+            ).expect("Failed to convert VkGeometryInstanceFlagsKHR")
         }
     }
 }
