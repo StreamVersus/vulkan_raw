@@ -1,5 +1,6 @@
 #![allow(non_snake_case)]
 #![allow(hidden_glob_reexports)]
+#![allow(unused_imports)]
 
 use std::fmt::Display;
 use std::ffi::{c_void, CStr};

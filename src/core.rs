@@ -1,6 +1,7 @@
 #![allow(non_snake_case)]
 #![allow(non_camel_case_types)]
 #![allow(non_upper_case_globals)]
+#![allow(unpredictable_function_pointer_comparisons)]
 
 use std::mem::transmute;
 use std::os::raw::{c_char, c_void};
