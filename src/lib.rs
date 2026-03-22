@@ -548,6 +548,8 @@ impl Debug for ApiVersion {
 mod core;
 mod ext;
 mod khr;
+#[cfg(feature = "VulkanMemoryAllocator")]
+mod vma;
 
 pub use crate::core::*;
 
@@ -594,3 +596,5 @@ pub use crate::khr::ray_tracing_pipeline::*;
 #[cfg(feature = "VK_KHR_ray_query")]
 pub use crate::khr::ray_query::*;
 
+#[cfg(feature = "VulkanMemoryAllocator")]
+pub use vma::*;
