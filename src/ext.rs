@@ -4,3 +4,7 @@ pub mod debug_utils;
 pub mod index_type_uint8;
 #[cfg(feature = "VK_EXT_memory_budget")]
 pub mod memory_budget;
+#[cfg(feature = "VK_AMD_device_coherent_memory")]
+pub mod device_coherent_memory;
+#[cfg(feature = "VK_EXT_memory_priority")]
+pub mod memory_priority;

@@ -1,43 +1,52 @@
+use std::env;
+
 fn main() {
-    let mut build = cc::Build::new();
-    build.include("VulkanMemoryAllocator/include");
+    #[cfg(feature = "VulkanMemoryAllocator")]
+    {
+        let mut build = cc::Build::new();
+        build.include("VulkanMemoryAllocator/include");
+        build.include("Vulkan-Headers/include");
+        build.file("VMAWrapper/vma.cpp");
 
-    if let Ok(lib) = pkg_config::probe_library("vulkan") {
-        for path in &lib.include_paths {
-            build.include(path);
-        }
-    } else if let Ok(sdk) = std::env::var("VULKAN_SDK") {
-        build.include(format!("{}/include", sdk));
-    } else {
-        panic!(
-            "Vulkan headers not found.\n\
-                Install libvulkan-dev (Linux), the LunarG Vulkan SDK, \
-                or set the VULKAN_SDK environment variable."
-        );
-    }
-
-    build.file("VMAWrapper/vma.cpp");
-
-    if cfg!(feature = "VK_VERSION_1_3") {
-        build.define("VMA_VULKAN_VERSION", "1003000");
-    } else {
-        build.define("VMA_VULKAN_VERSION", "1002000");
-    }
-
-    let target = std::env::var("TARGET").unwrap();
-    if target.contains("windows") {
-        if target.contains("gnu") {
-            build.flag("-std=c++14").cpp_link_stdlib("stdc++");
+        if cfg!(feature = "VK_VERSION_1_3") {
+            build.define("VMA_VULKAN_VERSION", "1003000");
         } else {
-            build.flag("/std:c++14").flag("/W0"); // MSVC: suppress all warnings
+            build.define("VMA_VULKAN_VERSION", "1002000");
         }
-    } else if target.contains("darwin") {
-        build.flag("-std=c++14").flag("-w").cpp_link_stdlib("c++").cpp_set_stdlib("c++");
-    } else if target.contains("android") {
-        build.flag("-std=c++14").flag("-w").cpp_link_stdlib("c++");
-    } else if target.contains("linux") {
-        build.flag("-std=c++14").flag("-w").cpp_link_stdlib("stdc++");
+
+        let target = env::var("TARGET").unwrap();
+        if target.contains("windows") {
+            let xwin_dir = env::var("XWIN_DIR")
+                .expect("XWIN_DIR must be set when targeting Windows");
+
+            build.flag(format!("-imsvc{xwin_dir}/crt/include"));
+            build.flag(format!("-imsvc{xwin_dir}/sdk/include/ucrt"));
+            build.flag(format!("-imsvc{xwin_dir}/sdk/include/um"));
+            build.flag(format!("-imsvc{xwin_dir}/sdk/include/shared"));
+            build.flag("/std:c++17");
+        } else {
+            build.flag("-std=c++17");
+
+            if target.contains("darwin") {
+                build.cpp_link_stdlib("c++");
+                build.cpp_set_stdlib("c++");
+            } else if target.contains("android") {
+                build.cpp_link_stdlib("c++");
+            } else {
+                // linux, gnu, etc.
+                build.cpp_link_stdlib("stdc++");
+            }
+        }
+
+        build.warnings(false);
+        if target.contains("darwin") {
+            build.cpp_link_stdlib("c++").cpp_set_stdlib("c++");
+        } else if target.contains("android") {
+            build.cpp_link_stdlib("c++");
+        } else if target.contains("linux") || (target.contains("windows") && target.contains("gnu")) {
+            build.cpp_link_stdlib("stdc++");
+        }
+        build.cpp(true);
+        build.compile("vma");
     }
-    build.cpp(true);
-    build.compile("vma");
 }

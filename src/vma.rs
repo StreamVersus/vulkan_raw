@@ -94,25 +94,25 @@ pub type PFN_vmaFreeDeviceMemoryFunction = extern "C" fn(
 pub type PFN_vkGetInstanceProcAddr =
     extern "C" fn(instance: VkInstance, pName: *const c_char) -> PFN_vkVoidFunction;
 pub type PFN_vkGetDeviceProcAddr =
-    extern "C" fn(device: VkDevice, pName: *const c_char) -> PFN_vkVoidFunction;
+    unsafe extern "C" fn(device: VkDevice, pName: *const c_char) -> PFN_vkVoidFunction;
 pub type PFN_vkGetPhysicalDeviceProperties =
-    extern "C" fn(physicalDevice: VkPhysicalDevice, pProperties: *mut VkPhysicalDeviceProperties);
-pub type PFN_vkGetPhysicalDeviceMemoryProperties = extern "C" fn(
+    unsafe extern "C" fn(physicalDevice: VkPhysicalDevice, pProperties: *mut VkPhysicalDeviceProperties);
+pub type PFN_vkGetPhysicalDeviceMemoryProperties = unsafe extern "C" fn(
     physicalDevice: VkPhysicalDevice,
     pMemoryProperties: *mut VkPhysicalDeviceMemoryProperties,
 );
-pub type PFN_vkAllocateMemory = extern "C" fn(
+pub type PFN_vkAllocateMemory = unsafe extern "C" fn(
     device: VkDevice,
     pAllocateInfo: *const VkMemoryAllocateInfo,
     pAllocator: *const VkAllocationCallbacks,
     pMemory: *mut VkDeviceMemory,
 ) -> VkResult;
-pub type PFN_vkFreeMemory = extern "C" fn(
+pub type PFN_vkFreeMemory = unsafe extern "C" fn(
     device: VkDevice,
     memory: VkDeviceMemory,
     pAllocator: *const VkAllocationCallbacks,
 );
-pub type PFN_vkMapMemory = extern "C" fn(
+pub type PFN_vkMapMemory = unsafe extern "C" fn(
     device: VkDevice,
     memory: VkDeviceMemory,
     offset: VkDeviceSize,
@@ -120,93 +120,93 @@ pub type PFN_vkMapMemory = extern "C" fn(
     flags: VkMemoryMapFlags,
     ppData: *mut *mut c_void,
 ) -> VkResult;
-pub type PFN_vkUnmapMemory = extern "C" fn(device: VkDevice, memory: VkDeviceMemory);
-pub type PFN_vkFlushMappedMemoryRanges = extern "C" fn(
+pub type PFN_vkUnmapMemory = unsafe extern "C" fn(device: VkDevice, memory: VkDeviceMemory);
+pub type PFN_vkFlushMappedMemoryRanges = unsafe extern "C" fn(
     device: VkDevice,
     memoryRangeCount: u32,
     pMemoryRanges: *const VkMappedMemoryRange,
 ) -> VkResult;
-pub type PFN_vkInvalidateMappedMemoryRanges = extern "C" fn(
+pub type PFN_vkInvalidateMappedMemoryRanges = unsafe extern "C" fn(
     device: VkDevice,
     memoryRangeCount: u32,
     pMemoryRanges: *const VkMappedMemoryRange,
 ) -> VkResult;
-pub type PFN_vkBindBufferMemory = extern "C" fn(
+pub type PFN_vkBindBufferMemory = unsafe extern "C" fn(
     device: VkDevice,
     buffer: VkBuffer,
     memory: VkDeviceMemory,
     memoryOffset: VkDeviceSize,
 ) -> VkResult;
-pub type PFN_vkBindImageMemory = extern "C" fn(
+pub type PFN_vkBindImageMemory = unsafe extern "C" fn(
     device: VkDevice,
     image: VkImage,
     memory: VkDeviceMemory,
     memoryOffset: VkDeviceSize,
 ) -> VkResult;
-pub type PFN_vkGetBufferMemoryRequirements = extern "C" fn(
+pub type PFN_vkGetBufferMemoryRequirements = unsafe extern "C" fn(
     device: VkDevice,
     buffer: VkBuffer,
     pMemoryRequirements: *const VkMemoryRequirements,
 );
 pub type PFN_vkGetImageMemoryRequirements =
-    extern "C" fn(device: VkDevice, image: VkImage, pMemoryRequirements: *mut VkMemoryRequirements);
-pub type PFN_vkCreateBuffer = extern "C" fn(
+    unsafe extern "C" fn(device: VkDevice, image: VkImage, pMemoryRequirements: *mut VkMemoryRequirements);
+pub type PFN_vkCreateBuffer = unsafe extern "C" fn(
     device: VkDevice,
     pCreateInfo: *const VkBufferCreateInfo,
     pAllocator: *const VkAllocationCallbacks,
     pBuffer: *mut VkBuffer,
 ) -> VkResult;
 pub type PFN_vkDestroyBuffer =
-    extern "C" fn(device: VkDevice, buffer: VkBuffer, pAllocator: *const VkAllocationCallbacks);
-pub type PFN_vkCreateImage = extern "C" fn(
+    unsafe extern "C" fn(device: VkDevice, buffer: VkBuffer, pAllocator: *const VkAllocationCallbacks);
+pub type PFN_vkCreateImage = unsafe extern "C" fn(
     device: VkDevice,
     pCreateInfo: *const VkImageCreateInfo,
     pAllocator: *const VkAllocationCallbacks,
     pImage: *mut VkImage,
 ) -> VkResult;
 pub type PFN_vkDestroyImage =
-    extern "C" fn(device: VkDevice, image: VkImage, pAllocator: *const VkAllocationCallbacks);
-pub type PFN_vkCmdCopyBuffer = extern "C" fn(
+    unsafe extern "C" fn(device: VkDevice, image: VkImage, pAllocator: *const VkAllocationCallbacks);
+pub type PFN_vkCmdCopyBuffer = unsafe extern "C" fn(
     commandBuffer: VkCommandBuffer,
     srcBuffer: VkBuffer,
     dstBuffer: VkBuffer,
     regionCount: u32,
     pRegions: *const VkBufferCopy,
 );
-pub type PFN_vkGetBufferMemoryRequirements2KHR = extern "C" fn(
+pub type PFN_vkGetBufferMemoryRequirements2KHR = unsafe extern "C" fn(
     device: VkDevice,
     pInfo: *const VkBufferMemoryRequirementsInfo2,
     pMemoryRequirements: *mut VkMemoryRequirements2,
 );
-pub type PFN_vkGetImageMemoryRequirements2KHR = extern "C" fn(
+pub type PFN_vkGetImageMemoryRequirements2KHR = unsafe extern "C" fn(
     device: VkDevice,
     pInfo: *const VkImageMemoryRequirementsInfo2,
     pMemoryRequirements: *mut VkMemoryRequirements2,
 );
-pub type PFN_vkBindBufferMemory2KHR = extern "C" fn(
+pub type PFN_vkBindBufferMemory2KHR = unsafe extern "C" fn(
     device: VkDevice,
     bindInfoCount: u32,
     pBindInfos: *const VkBindBufferMemoryInfo,
 ) -> VkResult;
-pub type PFN_vkBindImageMemory2KHR = extern "C" fn(
+pub type PFN_vkBindImageMemory2KHR = unsafe extern "C" fn(
     device: VkDevice,
     bindInfoCount: u32,
     pBindInfos: *const VkBindImageMemoryInfo,
 ) -> VkResult;
-pub type PFN_vkGetPhysicalDeviceMemoryProperties2KHR = extern "C" fn(
+pub type PFN_vkGetPhysicalDeviceMemoryProperties2KHR = unsafe extern "C" fn(
     physicalDevice: VkPhysicalDevice,
     pMemoryProperties: *mut VkPhysicalDeviceMemoryProperties2,
 );
 
 #[cfg(feature = "VK_VERSION_1_3")]
-pub type PFN_vkGetDeviceBufferMemoryRequirements = extern "C" fn(
+pub type PFN_vkGetDeviceBufferMemoryRequirements = unsafe extern "C" fn(
     device: VkDevice,
     pInfo: *const VkDeviceBufferMemoryRequirements,
     pMemoryRequirements: *mut VkMemoryRequirements2,
 );
 
 #[cfg(feature = "VK_VERSION_1_3")]
-pub type PFN_vkGetDeviceImageMemoryRequirements = extern "C" fn(
+pub type PFN_vkGetDeviceImageMemoryRequirements = unsafe extern "C" fn(
     device: VkDevice,
     pInfo: *const VkDeviceImageMemoryRequirements,
     pMemoryRequirements: *mut VkMemoryRequirements2,
@@ -285,191 +285,6 @@ pub struct VmaVulkanFunctions {
 }
 impl Default for VmaVulkanFunctions {
     fn default() -> Self {
-        extern "C" fn vkGetInstanceProcAddr(
-            _instance: VkInstance,
-            _pName: *const c_char,
-        ) -> PFN_vkVoidFunction {
-            unimplemented!()
-        }
-        extern "C" fn vkGetDeviceProcAddr(
-            _device: VkDevice,
-            _pName: *const c_char,
-        ) -> PFN_vkVoidFunction {
-            unimplemented!()
-        }
-        extern "C" fn vkGetPhysicalDeviceProperties(
-            _physicalDevice: VkPhysicalDevice,
-            _pProperties: *mut VkPhysicalDeviceProperties,
-        ) {
-            unimplemented!()
-        }
-        extern "C" fn vkGetPhysicalDeviceMemoryProperties(
-            _physicalDevice: VkPhysicalDevice,
-            _pMemoryProperties: *mut VkPhysicalDeviceMemoryProperties,
-        ) {
-            unimplemented!()
-        }
-        extern "C" fn vkAllocateMemory(
-            _device: VkDevice,
-            _pAllocateInfo: *const VkMemoryAllocateInfo,
-            _pAllocator: *const VkAllocationCallbacks,
-            _pMemory: *mut VkDeviceMemory,
-        ) -> VkResult {
-            unimplemented!()
-        }
-        extern "C" fn vkFreeMemory(
-            _device: VkDevice,
-            _memory: VkDeviceMemory,
-            _pAllocator: *const VkAllocationCallbacks,
-        ) {
-            unimplemented!()
-        }
-        extern "C" fn vkMapMemory(
-            _device: VkDevice,
-            _memory: VkDeviceMemory,
-            _offset: VkDeviceSize,
-            _size: VkDeviceSize,
-            _flags: VkMemoryMapFlags,
-            _ppData: *mut *mut c_void,
-        ) -> VkResult {
-            unimplemented!()
-        }
-        extern "C" fn vkUnmapMemory(_device: VkDevice, _memory: VkDeviceMemory) {
-            unimplemented!()
-        }
-        extern "C" fn vkFlushMappedMemoryRanges(
-            _device: VkDevice,
-            _memoryRangeCount: u32,
-            _pMemoryRanges: *const VkMappedMemoryRange,
-        ) -> VkResult {
-            unimplemented!()
-        }
-        extern "C" fn vkInvalidateMappedMemoryRanges(
-            _device: VkDevice,
-            _memoryRangeCount: u32,
-            _pMemoryRanges: *const VkMappedMemoryRange,
-        ) -> VkResult {
-            unimplemented!()
-        }
-        extern "C" fn vkBindBufferMemory(
-            _device: VkDevice,
-            _buffer: VkBuffer,
-            _memory: VkDeviceMemory,
-            _memoryOffset: VkDeviceSize,
-        ) -> VkResult {
-            unimplemented!()
-        }
-        extern "C" fn vkBindImageMemory(
-            _device: VkDevice,
-            _image: VkImage,
-            _memory: VkDeviceMemory,
-            _memoryOffset: VkDeviceSize,
-        ) -> VkResult {
-            unimplemented!()
-        }
-        extern "C" fn vkGetBufferMemoryRequirements(
-            _device: VkDevice,
-            _buffer: VkBuffer,
-            _pMemoryRequirements: *const VkMemoryRequirements,
-        ) {
-            unimplemented!()
-        }
-        extern "C" fn vkGetImageMemoryRequirements(
-            _device: VkDevice,
-            _image: VkImage,
-            _pMemoryRequirements: *mut VkMemoryRequirements,
-        ) {
-            unimplemented!()
-        }
-        extern "C" fn vkCreateBuffer(
-            _device: VkDevice,
-            _pCreateInfo: *const VkBufferCreateInfo,
-            _pAllocator: *const VkAllocationCallbacks,
-            _pBuffer: *mut VkBuffer,
-        ) -> VkResult {
-            unimplemented!()
-        }
-        extern "C" fn vkDestroyBuffer(
-            _device: VkDevice,
-            _buffer: VkBuffer,
-            _pAllocator: *const VkAllocationCallbacks,
-        ) {
-            unimplemented!()
-        }
-        extern "C" fn vkCreateImage(
-            _device: VkDevice,
-            _pCreateInfo: *const VkImageCreateInfo,
-            _pAllocator: *const VkAllocationCallbacks,
-            _pImage: *mut VkImage,
-        ) -> VkResult {
-            unimplemented!()
-        }
-        extern "C" fn vkDestroyImage(
-            _device: VkDevice,
-            _image: VkImage,
-            _pAllocator: *const VkAllocationCallbacks,
-        ) {
-            unimplemented!()
-        }
-        extern "C" fn vkCmdCopyBuffer(
-            _commandBuffer: VkCommandBuffer,
-            _srcBuffer: VkBuffer,
-            _dstBuffer: VkBuffer,
-            _regionCount: u32,
-            _pRegions: *const VkBufferCopy,
-        ) {
-            unimplemented!()
-        }
-        extern "C" fn vkGetBufferMemoryRequirements2(
-            _device: VkDevice,
-            _pInfo: *const VkBufferMemoryRequirementsInfo2,
-            _pMemoryRequirements: *mut VkMemoryRequirements2,
-        ) {
-            unimplemented!()
-        }
-        extern "C" fn vkGetImageMemoryRequirements2(
-            _device: VkDevice,
-            _pInfo: *const VkImageMemoryRequirementsInfo2,
-            _pMemoryRequirements: *mut VkMemoryRequirements2,
-        ) {
-            unimplemented!()
-        }
-        extern "C" fn vkBindBufferMemory2(
-            _device: VkDevice,
-            _bindInfoCount: u32,
-            _pBindInfos: *const VkBindBufferMemoryInfo,
-        ) -> VkResult {
-            unimplemented!()
-        }
-        extern "C" fn vkBindImageMemory2(
-            _device: VkDevice,
-            _bindInfoCount: u32,
-            _pBindInfos: *const VkBindImageMemoryInfo,
-        ) -> VkResult {
-            unimplemented!()
-        }
-        extern "C" fn vkGetPhysicalDeviceMemoryProperties2(
-            _physicalDevice: VkPhysicalDevice,
-            _pMemoryProperties: *mut VkPhysicalDeviceMemoryProperties2,
-        ) {
-            unimplemented!()
-        }
-        #[cfg(feature = "VK_VERSION_1_3")]
-        extern "C" fn vkGetDeviceBufferMemoryRequirements(
-            _device: VkDevice,
-            _pInfo: *const VkDeviceBufferMemoryRequirements,
-            _pMemoryRequirements: *mut VkMemoryRequirements2,
-        ) {
-            unimplemented!()
-        }
-        #[cfg(feature = "VK_VERSION_1_3")]
-        extern "C" fn vkGetDeviceImageMemoryRequirements(
-            _device: VkDevice,
-            _pInfo: *const VkDeviceImageMemoryRequirements,
-            _pMemoryRequirements: *mut VkMemoryRequirements2,
-        ) {
-            unimplemented!()
-        }
         Self {
             vkGetInstanceProcAddr,
             vkGetDeviceProcAddr,
@@ -591,6 +406,7 @@ pub struct VmaAllocationCreateInfo {
     pub pool: VmaPool,
     pub pUserData: *mut c_void,
     pub priority: f32,
+    pub minAlignment: VkDeviceSize,
 }
 impl Default for VmaAllocationCreateInfo {
     fn default() -> Self {
@@ -603,6 +419,7 @@ impl Default for VmaAllocationCreateInfo {
             pool: Default::default(),
             pUserData: ptr::null_mut(),
             priority: 0f32,
+            minAlignment: 0,
         }
     }
 }

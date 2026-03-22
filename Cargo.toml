@@ -24,6 +24,8 @@ default = [
     "VK_KHR_win32_surface",
     "VK_KHR_surface",
     "VK_VERSION_1_3",
+    "VK_AMD_device_coherent_memory",
+    "VK_EXT_memory_priority",
 ]
 
 VK_VERSION_1_3 = []
@@ -40,6 +42,9 @@ VK_KHR_ray_query = ["VK_KHR_acceleration_structure"]
 VK_EXT_debug_utils = []
 VK_EXT_index_type_uint8 = []
 VK_EXT_memory_budget = []
+
+VK_AMD_device_coherent_memory = []
+VK_EXT_memory_priority = []
 
 VK_KHR_win32_surface = ["VK_KHR_surface"]
 VK_KHR_external_fence_win32 = []

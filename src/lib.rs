@@ -281,7 +281,7 @@ macro_rules! instance_level_functions {
             $(
             $(#[$function_attr])*
             #[inline(always)]
-            pub unsafe fn $function_name($($parameter_name:$parameter_type),*)$(->$return_type)? {
+            pub unsafe extern "C" fn $function_name($($parameter_name:$parameter_type),*)$(->$return_type)? {
                 ([<$function_name _PFN>])($($parameter_name),*)
             }
             )*
@@ -344,7 +344,7 @@ macro_rules! device_level_functions {
             $(
             $(#[$function_attr])*
             #[inline(always)]
-            pub unsafe fn $function_name($($parameter_name:$parameter_type),*)$(->$return_type)? {
+            pub unsafe extern "C" fn $function_name($($parameter_name:$parameter_type),*)$(->$return_type)? {
                 ([<$function_name _PFN>])($($parameter_name),*)
             }
             )*
@@ -561,6 +561,12 @@ pub use crate::ext::index_type_uint8::*;
 
 #[cfg(feature = "VK_EXT_memory_budget")]
 pub use crate::ext::memory_budget::*;
+
+#[cfg(feature = "VK_AMD_device_coherent_memory")]
+pub use crate::ext::device_coherent_memory::*;
+
+#[cfg(feature = "VK_EXT_memory_priority")]
+pub use crate::ext::memory_priority::*;
 
 #[cfg(feature = "VK_KHR_external_fence_fd")]
 pub use crate::khr::external_fence_fd::*;

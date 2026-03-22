@@ -805,6 +805,8 @@ enums! {
 
         #[cfg(feature = "VK_EXT_memory_budget")]
         PHYSICAL_DEVICE_MEMORY_BUDGET_PROPERTIES_EXT = 1000237000,
+        #[cfg(feature = "VK_EXT_memory_priority")]
+        PHYSICAL_DEVICE_MEMORY_PRIORITY_FEATURES_EXT = 1000238000,
 
         #[cfg(feature = "VK_KHR_external_fence_fd")]
         IMPORT_FENCE_FD_INFO_KHR = 1000115000,
@@ -994,6 +996,9 @@ enums! {
         DEVICE_BUFFER_MEMORY_REQUIREMENTS = 1000413002,
         #[cfg(feature = "VK_VERSION_1_3")]
         DEVICE_IMAGE_MEMORY_REQUIREMENTS = 1000413003,
+
+        #[cfg(feature = "VK_AMD_device_coherent_memory")]
+        PHYSICAL_DEVICE_COHERENT_MEMORY_FEATURES_AMD = 1000229000,
     },
     enum VkImageLayout{
         UNDEFINED = 0,
